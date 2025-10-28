@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import apiRoutes from './routes/api';
+import { getDatabase } from './database/connection';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -49,9 +50,34 @@ app.use((req: Request, res: Response) => {
     });
 });
 
-// 서버 시작
-app.listen(PORT, () => {
-    console.log(`http://localhost:${PORT} 에서 실행 중입니다.`);
+// index.ts
+// 데이터베이스 연결 및 서버 시작
+async function startServer() {
+    try {
+        await getDatabase().connect();
+        app.listen(PORT, () => {
+            console.log(`http://localhost:${PORT} 에서 실행 중입니다.`);
+        });
+    } catch (error) {
+        console.error('서버 시작 실패:', error);
+        process.exit(1);
+    }
+}
+
+// index.ts
+// 서버 종료
+process.on('SIGINT', async () => {
+    console.log('\n서버를 종료합니다...');
+    try {
+        await getDatabase().disconnect();
+        console.log('데이터베이스 연결이 해제되었습니다.');
+        process.exit(0);
+    } catch (error) {
+        console.error('데이터베이스 연결 해제 실패:', error);
+        process.exit(1);
+    }
 });
+
+startServer();
 
 export default app;
